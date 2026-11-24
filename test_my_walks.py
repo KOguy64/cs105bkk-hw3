@@ -4,6 +4,8 @@ We grade this file by running it against a correct walks.py, where every test mu
 and against versions of walks.py with a bug planted in parse_walk, where your tests should fail.
 """
 
+import copy
+
 import pytest
 from walks import Walk, parse_walk
 
@@ -27,28 +29,29 @@ def test_core_date_cant_be_empty(good_row, date):
         parse_walk(good_row)
 
 
-@pytest.mark.parametrize("steps", ["abc", 12.5, -100])
+@pytest.mark.parametrize("steps", ["abc", "12.5", "-100", "-1", "", "    "])
 def test_core_steps_are_checked(good_row, steps):
     good_row["steps"] = steps
     with pytest.raises(ValueError):
         parse_walk(good_row)
 
 
-def test_good_rows_are_trimmed():
-    assert parse_walk(
-        {
-            "date": "   2026-11-16   ",
-            "steps": "   4200   ",
-            "place": "   Lumphini Park   ",
-        }
-    ) == Walk("2026-11-16", 4200, "Lumphini Park")
+def test_0_is_good_row(good_row):
+    good_row["steps"] = "0"
+    assert parse_walk(good_row) == Walk("2026-11-16", 0, "Lumphini Park")
 
 
-import copy
+@pytest.mark.parametrize("key", ["steps", "date", "place"])
+def test_good_rows_are_trimmed(good_row, key):
+    good_row[key] = "   " + good_row[key] + "  "
+
+    assert parse_walk(good_row) == Walk("2026-11-16", 4200, "Lumphini Park")
 
 
-def test_row_is_not_changed(good_row):
-    row = copy.deepcopy(good_row)
-    row_untouched = copy.deepcopy(good_row)
-    parse_walk(row)
-    assert row == row_untouched
+@pytest.mark.parametrize("key", ["steps", "date", "place"])
+def test_rows_arent_changed(good_row, key):
+    good_row[key] = "   " + good_row[key] + "  "
+    other_row = copy.deepcopy(good_row)
+
+    parse_walk(good_row)
+    assert other_row == good_row
