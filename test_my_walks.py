@@ -5,7 +5,6 @@ and against versions of walks.py with a bug planted in parse_walk, where your te
 """
 
 import pytest
-
 from walks import Walk, parse_walk
 
 
@@ -21,3 +20,35 @@ def test_core_example_a_good_row_becomes_a_walk(good_row):
 
 
 # Your tests go here.
+@pytest.mark.parametrize("date", ["", " ", "   "])
+def test_core_date_cant_be_empty(good_row, date):
+    good_row["date"] = date
+    with pytest.raises(ValueError):
+        parse_walk(good_row)
+
+
+@pytest.mark.parametrize("steps", ["abc", 12.5, -100])
+def test_core_steps_are_checked(good_row, steps):
+    good_row["steps"] = steps
+    with pytest.raises(ValueError):
+        parse_walk(good_row)
+
+
+def test_good_rows_are_trimmed():
+    assert parse_walk(
+        {
+            "date": "   2026-11-16   ",
+            "steps": "   4200   ",
+            "place": "   Lumphini Park   ",
+        }
+    ) == Walk("2026-11-16", 4200, "Lumphini Park")
+
+
+import copy
+
+
+def test_row_is_not_changed(good_row):
+    row = copy.deepcopy(good_row)
+    row_untouched = copy.deepcopy(good_row)
+    parse_walk(row)
+    assert row == row_untouched
